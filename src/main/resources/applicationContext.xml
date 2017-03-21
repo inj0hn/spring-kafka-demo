@@ -18,7 +18,37 @@
         <constructor-arg index="0">
             <bean class="org.springframework.kafka.core.DefaultKafkaConsumerFactory" c:configs-ref="consumerProps"/>
         </constructor-arg>
-        <constructor-arg index="1" ref="containerProps"/>
+        <constructor-arg index="1">
+        	<bean class="org.springframework.kafka.listener.config.ContainerProperties">
+		        <constructor-arg>
+		            <array>
+		                <value>vagrant-kafka-poc</value>
+		            </array>
+		        </constructor-arg>
+		        <property name="messageListener">
+		            <bean class="com.vagrant.TestMessageListener"/>
+		        </property>
+		    </bean>
+        </constructor-arg>
+    </bean>
+    
+    <bean id="kafkaPersonMessageListenerContainer" class="org.springframework.kafka.listener.KafkaMessageListenerContainer" 
+            init-method="start" destroy-method="stop" p:beanName="personMessageListenerContainer">
+        <constructor-arg index="0">
+            <bean class="org.springframework.kafka.core.DefaultKafkaConsumerFactory" c:configs-ref="personConsumerProps"/>
+        </constructor-arg>
+        <constructor-arg index="1">
+        	<bean class="org.springframework.kafka.listener.config.ContainerProperties">
+		        <constructor-arg>
+		            <array>
+		                <value>vagrant-kafka-person-poc</value>
+		            </array>
+		        </constructor-arg>
+		        <property name="messageListener">
+		            <bean class="com.vagrant.PersonMessageListener"/>
+		        </property>
+		    </bean>
+        </constructor-arg>
     </bean>
     
     <bean id="kafkaTemplate" class="org.springframework.kafka.core.KafkaTemplate"
@@ -27,18 +57,14 @@
             <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory" c:configs-ref="producerProps"/>
         </constructor-arg>
     </bean>
-
-    <bean id="containerProps" class="org.springframework.kafka.listener.config.ContainerProperties">
-        <constructor-arg>
-            <array>
-                <value>vagrant-kafka-poc</value>
-            </array>
-        </constructor-arg>
-        <property name="messageListener">
-            <bean class="com.vagrant.TestMessageListener"/>
-        </property>
-    </bean>
     
+    <bean id="kafkaPersonTemplate" class="org.springframework.kafka.core.KafkaTemplate"
+            p:defaultTopic="vagrant-kafka-person-poc">
+        <constructor-arg index="0">
+            <bean class="org.springframework.kafka.core.DefaultKafkaProducerFactory" c:configs-ref="personProducerProps"/>
+        </constructor-arg>
+    </bean>
+
     <util:map id="consumerProps">
         <entry>
             <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG"/></key>
@@ -66,7 +92,7 @@
         </entry>
         <entry>
             <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG"/></key>
-            <value type="java.lang.Class">org.apache.kafka.common.serialization.StringDeserializer</value>
+            <value type="java.lang.Class">org.apache.kafka.common.serialization.IntegerDeserializer</value>
         </entry>
     </util:map>
     
@@ -93,12 +119,74 @@
         </entry>
         <entry>
             <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG"/></key>
-            <value type="java.lang.Class">org.apache.kafka.common.serialization.StringSerializer</value>
+            <value type="java.lang.Class">org.apache.kafka.common.serialization.IntegerSerializer</value>
         </entry>
         <entry>
             <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG"/></key>
             <value type="java.lang.Class">org.apache.kafka.common.serialization.StringSerializer</value>
         </entry>
-    </util:map>                                 
+    </util:map>                    
+    
+    <util:map id="personProducerProps">
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG"/></key>
+            <value>${kafka.server.endpoint}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.RETRIES_CONFIG"/></key>
+            <value>${send.retry.max}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.BATCH_SIZE_CONFIG"/></key>
+            <value>${batch.size}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.LINGER_MS_CONFIG"/></key>
+            <value>${linger.milliseconds}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.BUFFER_MEMORY_CONFIG"/></key>
+            <value>${buffer.memory}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG"/></key>
+            <value type="java.lang.Class">org.apache.kafka.common.serialization.StringSerializer</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG"/></key>
+            <value type="java.lang.Class">com.vagrant.PersonMessageConverter</value>
+        </entry>
+    </util:map>   
+    
+    <util:map id="personConsumerProps">
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG"/></key>
+            <value>${kafka.server.endpoint}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG"/></key>
+            <value>${person.group.id}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG"/></key>
+            <value>true</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG"/></key>
+            <value>${autocommit.interval.milliseconds}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG"/></key>
+            <value>${session.timeout.milliseconds}</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG"/></key>
+            <value type="java.lang.Class">com.vagrant.PersonMessageConverter</value>
+        </entry>
+        <entry>
+            <key><util:constant static-field="org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG"/></key>
+            <value type="java.lang.Class">org.apache.kafka.common.serialization.StringDeserializer</value>
+        </entry>
+    </util:map>            
                            
 </beans>                           
