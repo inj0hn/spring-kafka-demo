@@ -9,6 +9,7 @@ Spring Kafka Integration Demo
 <h5>Installation</h5>
 
 1. Download Kafka
+<br>$ wget http://mirror.stjschools.org/public/apache/kafka/0.10.2.0/kafka_2.11-0.10.2.0.tgz
 <br>$ tar -xzf kafka_2.11-0.9.0.0.tgz
 <br>$ cd kafka_2.11-0.9.0.0
 
